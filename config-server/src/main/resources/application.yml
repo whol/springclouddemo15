@@ -1,0 +1,31 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  rabbitmq:
+    host: localhost
+    port: 5672
+#    username: guest
+#    password: guest
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/whol/springclouddemo15/
+          search-paths: config-respo/dev
+          username:
+          password:
+      label: master
+    bus:
+      trace:
+        enabled: true
+#关闭验证，否则发送post请求：http://localhost:8881/bus/refresh会返回401认证错误
+management:
+  security:
+    enabled: false
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
