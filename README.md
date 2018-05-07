@@ -373,7 +373,133 @@ management:
 11.4、向config-server发送post请求：http://localhost:8888/bus/refresh，访问config-client，查看获取到的内容是否更新。
 11.5、另外，/bus/refresh接口可以指定服务，即使用”destination”参数，比如 “/bus/refresh?destination=customers:**” 即刷新服务名为customers的所有服务，不管ip。
 
+12、服务链路追踪(Spring Cloud Sleuth)
+12.1、新建server-zipkin服务器，在pom中指定parent：
+<parent>
+   <groupId>com.wang</groupId>
+   <artifactId>springclouddemo15</artifactId>
+   <version>0.0.1-SNAPSHOT</version>
+   <relativePath/> <!-- lookup parent from repository -->
+</parent>
+增加zipkin的dependency
+<dependency>
+   <groupId>io.zipkin.java</groupId>
+   <artifactId>zipkin-server</artifactId>
+</dependency>
+<dependency>
+   <groupId>io.zipkin.java</groupId>
+   <artifactId>zipkin-autoconfigure-ui</artifactId>
+</dependency>
+12.2、配置文件application.yml内容：
+server:
+  port: 9411
+12.3、启动入口Application上面增加注解@EnableZipkinServer
+12.4、右键运行ServerZipkinApplication启动server-zipkin
 
+12.5、新建service-hi客户端，在pom中指定parent：
+<parent>
+   <groupId>com.wang</groupId>
+   <artifactId>springclouddemo15</artifactId>
+   <version>0.0.1-SNAPSHOT</version>
+   <relativePath/> <!-- lookup parent from repository -->
+</parent>
+增加zipkin的dependency
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-zipkin</artifactId>
+</dependency>
+12.6、配置文件application.yml内容：
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+server:
+  port: 8762
+spring:
+  application:
+    name: service-hi
+  zipkin:
+    base-url: http://localhost:9411
+12.7、启动入口Application上面增加注解@EnableEurekaClient
+@Bean
+public RestTemplate getRestTemplate(){
+   return new RestTemplate();
+}
+@Bean
+public AlwaysSampler defaultSampler(){
+   return new AlwaysSampler();
+}
+12.8、新建controller
+@RestController
+public class ServiceHiController {
+    private static final Logger LOG = Logger.getLogger(ServiceHiController.class.getName());
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @RequestMapping("/hi")
+    public String callHome(){
+        LOG.log(Level.INFO, "calling trace service-hi  ");
+        return restTemplate.getForObject("http://localhost:8989/hi", String.class);
+    }
+    @RequestMapping("/info22")
+    public String info(){
+        LOG.log(Level.INFO, "calling trace service-hi ");
+        return "i'm service-hi";
+    }
+}
+12.9、右键运行ServiceHiApplication启动server-hi
+
+12.10、新建service-miya客户端，在pom中指定parent：
+<parent>
+   <groupId>com.wang</groupId>
+   <artifactId>springclouddemo15</artifactId>
+   <version>0.0.1-SNAPSHOT</version>
+   <relativePath/> <!-- lookup parent from repository -->
+</parent>
+增加zipkin的dependency
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-zipkin</artifactId>
+</dependency>
+12.11、配置文件application.yml内容：
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+server:
+  port: 8989
+spring:
+  application:
+    name: service-miya
+  zipkin:
+    base-url: http://localhost:9411
+12.12、启动入口Application上面增加注解@EnableEurekaClient
+@Bean
+public RestTemplate getRestTemplate(){
+   return new RestTemplate();
+}
+@Bean
+public AlwaysSampler defaultSampler(){
+   return new AlwaysSampler();
+}
+12.13、新建controller
+@RestController
+public class ServiceMiyaController {
+    private static final Logger LOG = Logger.getLogger(ServiceMiyaController.class.getName());
+    @RequestMapping("/hi")
+    public String home(){
+        LOG.log(Level.INFO, "miya hi is being called");
+        return "hi i'm miya!";
+    }
+    @RequestMapping("/miya")
+    public String info(){
+        LOG.log(Level.INFO, "miya info is being called");
+        return restTemplate.getForObject("http://localhost:8762/info22",String.class);
+    }
+    @Autowired
+    private RestTemplate restTemplate;
+}
+12.14、右键运行ServiceMiyaApplication启动server-miya
 
 
 
