@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.wang</groupId>
-	<artifactId>service-hi</artifactId>
+	<artifactId>service-miya</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>service-hi</name>
+	<name>service-miya</name>
 	<description>Demo project for Spring Boot</description>
 
 	<parent>
@@ -35,6 +35,5 @@
 			</plugin>
 		</plugins>
 	</build>
-
 
 </project>

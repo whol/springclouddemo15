@@ -1,4 +1,4 @@
-package com.wang.servicehi;
+package com.wang.servicemiya;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,11 +9,12 @@ import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 @EnableEurekaClient
-public class ServiceHiApplication {
+public class ServiceMiyaApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ServiceHiApplication.class, args);
+		SpringApplication.run(ServiceMiyaApplication.class, args);
 	}
+
 
 	@Bean
 	public RestTemplate getRestTemplate(){
