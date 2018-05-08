@@ -502,6 +502,117 @@ public class ServiceMiyaController {
 12.14、右键运行ServiceMiyaApplication启动server-miya
 
 
+13、加入断路器聚合监控(Hystrix Turbine)
+13.1、在pom中指定parent：
+<parent>
+   <groupId>com.wang</groupId>
+   <artifactId>springclouddemo15</artifactId>
+   <version>0.0.1-SNAPSHOT</version>
+   <relativePath/> <!-- lookup parent from repository -->
+</parent>
+增加config-server的dependency
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-turbine</artifactId>
+</dependency>
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-netflix-turbine</artifactId>
+</dependency>
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-hystrix-dashboard</artifactId>
+</dependency>
+13.2、配置文件application.yml内容：
+spring:
+  application:
+    name: service-turbine
+server:
+  port: 8769
+security:
+  basic:
+    enabled: false
+turbine:
+  aggregator:
+    clusterConfig: default   # 指定聚合哪些集群，多个使用","分割，默认为default。可使用http://.../turbine.stream?cluster={clusterConfig之一}访问
+  appConfig: service-lucy1,service-lucy2  # 配置Eureka中的serviceId列表，表明监控哪些服务
+  clusterNameExpression: new String("default")
+  # 1. clusterNameExpression指定集群名称，默认表达式appName；此时：turbine.aggregator.clusterConfig需要配置想要监控的应用名称
+  # 2. 当clusterNameExpression: default时，turbine.aggregator.clusterConfig可以不写，因为默认就是default
+  # 3. 当clusterNameExpression: metadata['cluster']时，假设想要监控的应用配置了eureka.instance.metadata-map.cluster: ABC，则需要配置，同时turbine.aggregator.clusterConfig: ABC
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+13.3、启动入口Application上面增加注解@EnableTurbine    @EnableHystrixDashboard
+
+13.4、在需要加入断路器聚合监控的子系统的pom中增加dependency：
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-feign</artifactId>
+</dependency>
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-hystrix</artifactId>
+</dependency>
+13.5、配置文件application.yml内容：
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+server:
+  port: 8088
+spring:
+  application:
+    name: service-lucy1
+feign:
+  hystrix:
+    enabled: true
+13.6、启动入口Application上面增加注解
+@EnableEurekaClient
+@EnableDiscoveryClient
+@EnableFeignClients
+@EnableHystrix
+13.7、controller内容：
+@RestController
+public class ServiceLucy1Controller {
+    private static final Logger LOG = Logger.getLogger(ServiceLucy1Controller.class.getName());
+    @Autowired
+    private ServiceLucy2Client serviceLucy2Client;
+    @Value("${server.port}")
+    String port;
+    @RequestMapping("/localhi")
+    public String localhi(@RequestParam String name){
+        LOG.log(Level.INFO, "Lucy1 localhi is being called");
+        return "hi i'm Lucy1! "+name+",i am from port:" +port;
+    }
+    @RequestMapping("/remotehi")
+    public String remotehi(@RequestParam String name){
+        LOG.log(Level.INFO, "Lucy1 remotehi is being called");
+        return serviceLucy2Client.sayHiFromClientOne(name);
+    }
+}
+13.8、feign client内容：
+@FeignClient(value = "service-lucy2", fallback = ServiceLucy2Hystrix.class)
+public interface ServiceLucy2Client {
+    @RequestMapping(value = "/localhi",method = RequestMethod.GET)
+    String sayHiFromClientOne(@RequestParam(value = "name") String name);
+}
+13.9、hystrix内容：
+@Component
+public class ServiceLucy2Hystrix implements ServiceLucy2Client {
+    @Override
+    public String sayHiFromClientOne(String name) {
+        return "sorry "+name;
+    }
+}
+
+13.10、启动Hystrix Dashboardhttp://localhost:8769/hystrix
+内容输入turbine的监控数据路径http://localhost:8769/turbine.stream
 
 
 
